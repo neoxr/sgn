@@ -90,7 +90,7 @@ class SessionCipher {
             msg.ephemeralKey = session.currentRatchet.ephemeralKeyPair.pubKey;
             msg.counter = chain.chainKey.counter;
             msg.previousCounter = session.currentRatchet.previousCounter;
-            msg.ciphertext = crypto.encrypt(keys[0], data, keys[2].slice(0, 16));
+            msg.ciphertext = crypto.encrypt(keys[0], data, keys[2].subarray(0, 16));
             const msgBuf = protobufs.WhisperMessage.encode(msg).finish();
             const macInput = Buffer.alloc(msgBuf.byteLength + (33 * 2) + 1);
             macInput.set(ourIdentityKey.pubKey);
@@ -101,7 +101,7 @@ class SessionCipher {
             const result = Buffer.alloc(msgBuf.byteLength + 9);
             result[0] = this._encodeTupleByte(VERSION, VERSION);
             result.set(msgBuf, 1);
-            result.set(mac.slice(0, 8), msgBuf.byteLength + 1);
+            result.set(mac.subarray(0, 8), msgBuf.byteLength + 1);
             await this.storeRecord(record);
             let type, body;
             if (session.pendingPreKey) {
@@ -154,9 +154,9 @@ class SessionCipher {
                 errs.push(e);
             }
         }
-        console.error("Failed to decrypt message with any known session...");
+        //console.error("Failed to decrypt message with any known session...");
         for (const e of errs) {
-            console.error("Session error:" + e, e.stack);
+            //console.error("Session error:" + e, e.stack);
         }
         throw new errors.SessionError("No matching sessions found for message");
     }
@@ -179,7 +179,7 @@ class SessionCipher {
                 // was the most current.  Simply make a note of it and continue.  If our
                 // actual open session is for reason invalid, that must be handled via
                 // a full SessionError response.
-                console.warn("Decrypted message with closed session.");
+                //console.warn("Decrypted message with closed session.");
             }
             await this.storeRecord(record);
             return result.plaintext;
@@ -248,7 +248,7 @@ class SessionCipher {
         // This is where we most likely fail if the session is not a match.
         // Don't misinterpret this as corruption.
         crypto.verifyMAC(macInput, keys[1], messageBuffer.slice(-8), 8);
-        const plaintext = crypto.decrypt(keys[0], message.ciphertext, keys[2].slice(0, 16));
+        const plaintext = crypto.decrypt(keys[0], message.ciphertext, keys[2].subarray(0, 16));
         delete session.pendingPreKey;
         return plaintext;
     }
